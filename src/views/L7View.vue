@@ -115,30 +115,32 @@ export default defineComponent({
         }),
       });
       // 线图层
-      const getLineLayer = (geoJson, color) => {
+      const getLineLayer = (geoJson) => {
         return new LineLayer({})
           .source(geoJson)
           .size(2)
           .shape("line")
-          .color("name", [color])
+          .color("name", (v) => {
+            return colors[v] || colors.line
+          })
           .style({});
       };
       // 普通站点图层
-      const getStationLayer = (geoJson, color) => {
+      const getStationLayer = (geoJson) => {
         return new PointLayer()
           .shape("circle")
           .source(geoJson)
           .size(4)
-          .color(color)
+          .color(colors.station)
           .style({});
       };
       // 故障站点图层
-      const getFaultStationLayer = (geoJson, color) => {
+      const getFaultStationLayer = (geoJson) => {
         return new PointLayer()
           .shape("circle")
           .source(geoJson)
           .size(5)
-          .color(color)
+          .color("name", (v) => colors[v])
           .style({
             strokeWidth: 1,
             stroke: "#fff",
@@ -147,8 +149,11 @@ export default defineComponent({
       // 图片标记图层
       scene.addImage("normal", normal);
       scene.addImage("active", active);
-      const getImageLayer = (geoJson, shape) => {
-        return new PointLayer().shape(shape).source(geoJson).size(40);
+      const getImageLayer = (geoJson) => {
+        return new PointLayer()
+          .shape("name", (v) => v)
+          .source(geoJson)
+          .size(40);
       };
 
       scene.on("loaded", () => {
@@ -160,11 +165,11 @@ export default defineComponent({
           linesStations = data;
           const geoJSONLine = getGeoJSON(data, "MultiLineString");
           console.log(geoJSONLine);
-          const lineLayer = getLineLayer(geoJSONLine, colors.line);
+          const lineLayer = getLineLayer(geoJSONLine);
           scene.addLayer(lineLayer); // 线路
           const geoJSONStation = getGeoJSON(data, "MultiPoint");
           console.log(geoJSONStation);
-          const stationLayer = getStationLayer(geoJSONStation, colors.station);
+          const stationLayer = getStationLayer(geoJSONStation);
           scene.addLayer(stationLayer); // 站点
           // 某段站点标记 （红绿黄）
           // 模拟查找站点数据
@@ -173,45 +178,27 @@ export default defineComponent({
           const faultIII = searchStationSegment("南锣鼓巷", "东四");
           console.log(faultII);
           // 标记以上站点段
-          const faultIGeo = getGeoJSON({ faultI });
-          const faultIIGeo = getGeoJSON({ faultII });
-          const faultIIIGeo = getGeoJSON({ faultIII });
-          const layerI = getLineLayer(faultIGeo, colors.faultI);
-          const layerII = getLineLayer(faultIIGeo, colors.faultII);
-          const layerIII = getLineLayer(faultIIIGeo, colors.faultIII);
-          scene.addLayer(layerI); // 线路
-          scene.addLayer(layerII); // 线路
-          scene.addLayer(layerIII); // 线路
+          const faultGeo = getGeoJSON({ faultI, faultII, faultIII });
+          const faultLineLayer = getLineLayer(faultGeo);
+          scene.addLayer(faultLineLayer); // 线路
 
           // 站点标记
           const stationI = searchStationInLine("立水桥", "5号线");
           const stationII = searchStationInLine("霍营", "8");
           const stationIII = searchStationInLine("上地", "13号线");
           // 站点geo
-          const faultSIGeo = getGeoJSON({ stationI }, "MultiPoint");
-          const faultSIIGeo = getGeoJSON({ stationII }, "MultiPoint");
-          const faultSIIIGeo = getGeoJSON({ stationIII }, "MultiPoint");
-          const stationLayerI = getFaultStationLayer(faultSIGeo, colors.faultI);
-          const stationLayerII = getFaultStationLayer(
-            faultSIIGeo,
-            colors.faultII
+          const faultStationGeo = getGeoJSON(
+            { faultI: stationI, faultII: stationII, faultIII: stationIII },
+            "MultiPoint"
           );
-          const stationLayerIII = getFaultStationLayer(
-            faultSIIIGeo,
-            colors.faultIII
-          );
-          scene.addLayer(stationLayerI); // 站点
-          scene.addLayer(stationLayerII); // 站点
-          scene.addLayer(stationLayerIII); // 站点
+          const faultStationLayer = getFaultStationLayer(faultStationGeo);
+          scene.addLayer(faultStationLayer); // 站点
           // 站点图片标记
           const active = searchStationInLine("王府井", "1号线");
           const normal = searchStationInLine("2号航站楼", "首都机场");
-          const activeGeo = getGeoJSON({ active }, "MultiPoint");
-          const normalGeo = getGeoJSON({ normal }, "MultiPoint");
-          const activeLayer = getImageLayer(activeGeo, "active");
-          const normalLayer = getImageLayer(normalGeo, "normal");
-          scene.addLayer(activeLayer); // 站点
-          scene.addLayer(normalLayer); // 站点
+          const imgGeo = getGeoJSON({ active, normal }, "MultiPoint");
+          const imgLayer = getImageLayer(imgGeo);
+          scene.addLayer(imgLayer); // 站点
         });
       }); // scene loaded
     }); // mounted end
