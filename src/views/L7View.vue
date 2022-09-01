@@ -108,12 +108,18 @@ export default defineComponent({
         id: "subway",
         map: new Mapbox({
           center: [116.3956, 39.9392],
-          pitch: 20,
-          zoom: 10,
+          pitch: 0, // 地图倾角
+          // zoom: 10,
+          minZoom: 9,
           rotation: 0,
-          style: "dark",
+          style: "blank", // blank无底图模式 light/dark
         }),
       });
+      // 设置地图缩放范围 经纬度 （eg: 北京）
+      scene.fitBounds([
+        [117.2, 40.3],
+        [115.6, 39.5],
+      ]);
       // 线图层
       const getLineLayer = (geoJson) => {
         return new LineLayer({})
@@ -121,7 +127,7 @@ export default defineComponent({
           .size(2)
           .shape("line")
           .color("name", (v) => {
-            return colors[v] || colors.line
+            return colors[v] || colors.line;
           })
           .style({});
       };
@@ -155,7 +161,6 @@ export default defineComponent({
           .source(geoJson)
           .size(40);
       };
-
       scene.on("loaded", () => {
         // 请求json数据
         httpRequest({
@@ -192,6 +197,22 @@ export default defineComponent({
             "MultiPoint"
           );
           const faultStationLayer = getFaultStationLayer(faultStationGeo);
+          // 绑定popup事件
+          faultStationLayer.on("mousemove", (e) => {
+            console.log(e);
+            const popup = new Popup({
+              offsets: [ 0, 0 ],
+              closeButton: false,
+            })
+              // .setLnglat(e.lngLat)
+              // .setHTML(`<span style="color: red">故障类型：${e.feature.properties.name}</span>`);
+              .setLnglat([116.3956, 39.9392])
+              .setText("xx信息");
+            // popup.on("open", () => {
+            //   alert("打开了");
+            // });
+            scene.addPopup(popup);
+          });
           scene.addLayer(faultStationLayer); // 站点
           // 站点图片标记
           const active = searchStationInLine("王府井", "1号线");
@@ -212,5 +233,6 @@ export default defineComponent({
 <style>
 #subway {
   height: 100%;
+  background-color: #070918;
 }
 </style>
