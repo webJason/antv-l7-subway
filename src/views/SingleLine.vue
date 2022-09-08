@@ -1,35 +1,31 @@
 <template>
-  <main class="l7">
+  <main class="line">
     <div id="subway"></div>
-    <StationInfo v-show="showInfo" ref="stationInfo" :station="focusStation" />
   </main>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref, toRefs } from "vue";
+import { defineComponent, onMounted, reactive, ref } from "vue";
 import { Scene, LineLayer, PointLayer, Popup } from "@antv/l7";
 import { Mapbox } from "@antv/l7-maps";
 import { Colors } from "./colors";
 import httpRequest from "@/request/index";
 import active from "@/assets/SVG/active.svg";
 import normal from "@/assets/SVG/normal.svg";
-import StationInfo from "@/components/StationInfo.vue";
 export default defineComponent({
   name: "L7View",
-  components: {
-    StationInfo,
-  },
   setup() {
     const colors = new Colors();
     let linesStations = []; // 记录接口数据
-    const getGeoJSON = (data: object, type = "MultiLineString"): object => {
+    const getLineGeoJSON = (data: []): object => {
       const features = [];
-      for (const line in data) {
-        const position = data[line].map((s: object) =>
-          s.lnglat.split(",").map((e) => {
-            return e * 1; // 必须为number类型
-          })
-        );
+      for (const line of data) {
+        const position = line.stations.map((s: object) =>{
+          return [s.lngLat.lng, s.lngLat.lat]
+        });
+        if (["2号线", "10号线"].includes(line.lb)) { // 环线 首尾相接
+          position.push(position[0])
+        }
         const feture = {
           type: "Feature",
           properties: {
@@ -37,8 +33,33 @@ export default defineComponent({
             // uid: line.uid,
           },
           geometry: {
-            type,
-            coordinates: type === "MultiLineString" ? [position] : position,
+            type: "MultiLineString",
+            coordinates: [position],
+          },
+        };
+        features.push(feture);
+      }
+      const collection = {
+        type: "FeatureCollection",
+        features: features,
+      };
+      return collection;
+    };
+    const getStationGeoJSON = (data: []): object => {
+      const features = [];
+      for (const line of data) {
+        const position = line.stations.filter((s: object) => s.lb !== "").map((s: object) =>{ // 过渡点位过滤
+          return [s.lngLat.lng, s.lngLat.lat]
+        });
+        const feture = {
+          type: "Feature",
+          properties: {
+            name: line,
+            // uid: line.uid,
+          },
+          geometry: {
+            type: "MultiPoint",
+            coordinates: position,
           },
         };
         features.push(feture);
@@ -101,55 +122,50 @@ export default defineComponent({
       res = lineData.slice(startIndex, endIndex + 1);
       return res;
     };
-    const stationInfo = ref(null);
-    let focusStation = {};
-    const showInfo = ref(false);
     onMounted(() => {
-      /* httpRequest({
-        url: "/alipay/os/basement_prod/0d2f0113-f48b-4db9-8adc-a3937243d5a3.json",
-        method: "get",
-      }).then((data) => {
-        console.log(data);
-      }); */
-
       const scene = new Scene({
         id: "subway",
-        logoVisible: false, // false 不显示logo
         map: new Mapbox({
-          // interactive: false, // 禁用鼠标监听（无拖拽缩放等操作）
-          // dragPan: false, // 不允许拖拽
-          // scrollZoom: true, // 滚动缩放
-          // boxZoom: true, // 框选缩放
-          // doubleClickZoom: true, // 双击缩放
-          maxBounds: [
-            // 将限制在给定的最大范围 [西南, 东北]
-            [115.7, 39.4],
-            [117.4, 40.5],
-          ],
           center: [116.25, 39.54],
           pitch: 0, // 地图倾角
-          // zoom: 10,
-          minZoom: 9,
-          style: "dark", // blank无底图模式 light/dark
+          maxBounds: [
+            // 将限制在给定的最大范围 [西南, 东北]
+            [115.0, 39.13],
+            [117.35, 40.43],
+          ],
+          style: "blank", // blank无底图模式 light/dark
         }),
       });
-      // 设置地图缩放范围 经纬度 （eg: 北京）
       scene.fitBounds([
-        [117.2, 40.3],
-        [115.6, 39.5],
+        [115.0, 39.13],
+        [117.35, 40.43],
       ]);
       // 线图层
       const getLineLayer = (geoJson) => {
-        return new LineLayer({
-          // autoFit: true
-        })
+        return new LineLayer({})
           .source(geoJson)
           .size(2)
           .shape("line")
           .color("name", (v) => {
             return colors[v] || colors.line;
           })
-          .style({});
+          .style({
+            opacity: 0.4
+          });
+      };
+      // 标记线路图层
+      const getSingleLineLayer = (geoJson) => {
+        return new LineLayer({})
+          .source(geoJson)
+          .size(2)
+          .shape("line")
+          .color("name", (v) => {
+            return colors[v] || colors.line;
+          })
+          .style({
+            lineType: 'dash',
+            dashArray: [3, 3] // [长度, 间距]
+          });
       };
       // 普通站点图层
       const getStationLayer = (geoJson) => {
@@ -162,20 +178,15 @@ export default defineComponent({
       };
       // 故障站点图层
       const getFaultStationLayer = (geoJson) => {
-        return (
-          new PointLayer({
-            // zIndex: 22,
-          })
-            .shape("circle")
-            .source(geoJson)
-            .size(5)
-            // .active(true)
-            .color("name", (v) => colors[v])
-            .style({
-              strokeWidth: 1,
-              stroke: "#fff",
-            })
-        );
+        return new PointLayer()
+          .shape("circle")
+          .source(geoJson)
+          .size(5)
+          .color("name", (v) => colors[v])
+          .style({
+            strokeWidth: 1,
+            stroke: "#fff",
+          });
       };
       // 图片标记图层
       scene.addImage("normal", normal);
@@ -186,27 +197,28 @@ export default defineComponent({
           .source(geoJson)
           .size(40);
       };
+      // 经纬度转画布坐标
       scene.on("loaded", () => {
-        // 地图加载完毕
         // 请求json数据
         httpRequest({
-          url: "/linesStations.json",
+          url: "/bj2.json",
           method: "get",
         }).then((data) => {
-          linesStations = data;
-          const geoJSONLine = getGeoJSON(data, "MultiLineString");
-          console.log(geoJSONLine);
+          linesStations = data
+          const notLine6 = linesStations.filter((l) => l.lb !== "6号线")
+          const line6 = linesStations.filter((l) => l.lb === "6号线")
+          const geoJSONLine = getLineGeoJSON(notLine6); // , "MultiLineString"
           const lineLayer = getLineLayer(geoJSONLine);
           scene.addLayer(lineLayer); // 线路
-          const geoJSONStation = getGeoJSON(data, "MultiPoint");
-          console.log(geoJSONStation);
+          // 6号线
+          const geoJSONLine6 = getLineGeoJSON(line6); // , "MultiLineString"
+          const geoJSONStation = getStationGeoJSON(line6); // , "MultiPoint"
+          const line6Layer = getSingleLineLayer(geoJSONLine6);
           const stationLayer = getStationLayer(geoJSONStation);
+          scene.addLayer(line6Layer); // 站点
           scene.addLayer(stationLayer); // 站点
-          // 经纬度转换像素
-          // console.log(scene.lngLatToPixel([116.412888, 40.083668])); // 天通苑北
-          // console.log(scene.lngLatToContainer([116.412888, 40.083668])); // 天通苑北
-          // console.log(scene.lngLatToPixel([116.412759, 40.075222]));
-          // 某段站点标记 （红绿黄）
+
+          /* // 某段站点标记 （红绿黄）
           // 模拟查找站点数据
           const faultI = searchStationSegment("立水桥", "立水桥南");
           const faultII = searchStationSegment("望京", "望京西", "15");
@@ -229,20 +241,17 @@ export default defineComponent({
           const faultStationLayer = getFaultStationLayer(faultStationGeo);
           // 绑定popup事件
           faultStationLayer.on("mousemove", (e) => {
-            // console.log(e.feature);
-            focusStation = e.feature;
+            console.log(e);
             const popup = new Popup({
               offsets: [0, 0],
               closeButton: false,
             })
-              .setLnglat(e.lngLat)
-              .setDOMContent(stationInfo.value.$el);
-            popup.on("open", () => {
-              showInfo.value = true;
-            });
-            // popup.on("close", () => {
-            //   console.log(0);
-            //   showInfo.value = false;
+              // .setLnglat(e.lngLat)
+              // .setHTML(`<span style="color: red">故障类型：${e.feature.properties.name}</span>`);
+              .setLnglat([116.3956, 39.9392])
+              .setText("xx信息");
+            // popup.on("open", () => {
+            //   alert("打开了");
             // });
             scene.addPopup(popup);
           });
@@ -252,17 +261,13 @@ export default defineComponent({
           const normal = searchStationInLine("2号航站楼", "首都机场");
           const imgGeo = getGeoJSON({ active, normal }, "MultiPoint");
           const imgLayer = getImageLayer(imgGeo);
-          scene.addLayer(imgLayer); // 站点
+          scene.addLayer(imgLayer); // 站点 */
         });
       }); // scene loaded
     }); // mounted end
 
     // setup return
-    return {
-      stationInfo,
-      focusStation,
-      showInfo,
-    };
+    return {};
   },
 });
 </script>

@@ -14,6 +14,21 @@ const router = createRouter({
       name: "l7",
       component: () => import("../views/L7View.vue"),
     },
+    {
+      path: "/single",
+      name: "single",
+      component: () => import("../views/SingleLine.vue"),
+    },
+    {
+      path: "/pos",
+      name: "pos",
+      component: () => import("../views/PositionView.vue"),
+    },
+    {
+      path: "/test",
+      name: "test",
+      component: () => import("../views/Test.vue"),
+    },
   ],
 });
 

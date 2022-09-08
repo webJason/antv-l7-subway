@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@antv/l7": "^2.9.25",
+    "@antv/l7": "latest",
+    "@antv/l7-maps": "latest",
     "axios": "^0.27.2",
     "vue": "^3.2.37",
     "vue-axios": "^3.4.1",
