@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref } from "vue";
+import { defineComponent, onMounted } from "vue";
 import { Scene, LineLayer, PolygonLayer, Popup } from "@antv/l7";
 import { Mapbox } from "@antv/l7-maps";
 import httpRequest from "@/request/index";
@@ -27,8 +27,6 @@ export default defineComponent({
         httpRequest({
           url: "/alipay/os/basement_prod/d36ad90e-3902-4742-b8a2-d93f7e5dafa2.json",
         }).then((data) => {
-          //   console.log(resp);
-          //   const data = resp.data
           const color = [
             "rgb(255,255,217)",
             "rgb(237,248,177)",

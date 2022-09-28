@@ -1,10 +1,11 @@
 <template>
-  <div class="station-info">
+  <div class="station-info" :style="{ color: colors[info] }">
     {{ info }}
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, computed, onMounted, watch } from "vue";
+import { defineComponent, computed, watch } from "vue";
+import { Colors } from "@/views/colors";
 export default defineComponent({
   name: "StationInfo",
   props: {
@@ -14,8 +15,9 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const colors = new Colors();
     const info = computed(() => props.station.properties?.name || "err");
-    watch(
+    /* watch(
       () => props.station,
       (n, o) => {
         console.log(n);
@@ -23,13 +25,11 @@ export default defineComponent({
       {
         deep: true,
       }
-    );
-    onMounted(() => {
-      console.log(props.station);
-    });
+    ); */
     // setup return
     return {
       info,
+      colors,
     };
   },
 });
@@ -37,7 +37,7 @@ export default defineComponent({
 
 <style>
 .station-info {
-  width: 200px;
-  height: 200px;
+  width: 100px;
+  height: 100px;
 }
 </style>

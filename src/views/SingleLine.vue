@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref } from "vue";
+import { defineComponent, onMounted } from "vue";
 import { Scene, LineLayer, PointLayer, Popup } from "@antv/l7";
 import { Mapbox } from "@antv/l7-maps";
 import { Colors } from "./colors";
@@ -20,11 +20,12 @@ export default defineComponent({
     const getLineGeoJSON = (data: []): object => {
       const features = [];
       for (const line of data) {
-        const position = line.stations.map((s: object) =>{
-          return [s.lngLat.lng, s.lngLat.lat]
+        const position = line.stations.map((s: object) => {
+          return [s.lngLat.lng, s.lngLat.lat];
         });
-        if (["2号线", "10号线"].includes(line.lb)) { // 环线 首尾相接
-          position.push(position[0])
+        if (["2号线", "10号线"].includes(line.lb)) {
+          // 环线 首尾相接
+          position.push(position[0]);
         }
         const feture = {
           type: "Feature",
@@ -48,9 +49,12 @@ export default defineComponent({
     const getStationGeoJSON = (data: []): object => {
       const features = [];
       for (const line of data) {
-        const position = line.stations.filter((s: object) => s.lb !== "").map((s: object) =>{ // 过渡点位过滤
-          return [s.lngLat.lng, s.lngLat.lat]
-        });
+        const position = line.stations
+          .filter((s: object) => s.lb !== "")
+          .map((s: object) => {
+            // 过渡点位过滤
+            return [s.lngLat.lng, s.lngLat.lat];
+          });
         const feture = {
           type: "Feature",
           properties: {
@@ -150,7 +154,7 @@ export default defineComponent({
             return colors[v] || colors.line;
           })
           .style({
-            opacity: 0.4
+            opacity: 0.4,
           });
       };
       // 标记线路图层
@@ -163,8 +167,8 @@ export default defineComponent({
             return colors[v] || colors.line;
           })
           .style({
-            lineType: 'dash',
-            dashArray: [3, 3] // [长度, 间距]
+            lineType: "dash",
+            dashArray: [3, 3], // [长度, 间距]
           });
       };
       // 普通站点图层
@@ -204,9 +208,9 @@ export default defineComponent({
           url: "/bj2.json",
           method: "get",
         }).then((data) => {
-          linesStations = data
-          const notLine6 = linesStations.filter((l) => l.lb !== "6号线")
-          const line6 = linesStations.filter((l) => l.lb === "6号线")
+          linesStations = data;
+          const notLine6 = linesStations.filter((l) => l.lb !== "6号线");
+          const line6 = linesStations.filter((l) => l.lb === "6号线");
           const geoJSONLine = getLineGeoJSON(notLine6); // , "MultiLineString"
           const lineLayer = getLineLayer(geoJSONLine);
           scene.addLayer(lineLayer); // 线路

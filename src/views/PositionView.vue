@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref } from "vue";
+import { defineComponent, onMounted } from "vue";
 import { Scene, LineLayer, PointLayer, Popup } from "@antv/l7";
 import { Colors } from "./colors";
 import { Mapbox } from "@antv/l7-maps";
@@ -40,20 +40,20 @@ export default defineComponent({
     };
     // 故障站点
     const getFaultStationLayer = (geoJson) => {
-    return (
+      return (
         new PointLayer({
-        // zIndex: 22,
+          // zIndex: 22,
         })
-        .shape("circle")
-        .source(geoJson)
-        .size(5)
-        // .active(true)
-        // .color("name", (v) => colors[v])
-        .style({
+          .shape("circle")
+          .source(geoJson)
+          .size(5)
+          // .active(true)
+          // .color("name", (v) => colors[v])
+          .style({
             strokeWidth: 1,
             stroke: "#fff",
-        })
-    );
+          })
+      );
     };
     onMounted(() => {
       const scene = new Scene({
@@ -63,12 +63,12 @@ export default defineComponent({
           style: "dark",
           center: [116.3956, 39.9392],
           zoom: 10,
-        //   maxBounds: [
-        //     // 将限制在给定的最大范围 [西南, 东北]
-        //     [113.4, 38.47],
-        //     [118.3, 40.68],
-        //   ],
-        //   trackResize: true
+          //   maxBounds: [
+          //     // 将限制在给定的最大范围 [西南, 东北]
+          //     [113.4, 38.47],
+          //     [118.3, 40.68],
+          //   ],
+          //   trackResize: true
         }),
       });
       scene.fitBounds([
@@ -105,7 +105,7 @@ export default defineComponent({
           };
           console.log(geoJsonLine6) */
           const features = [];
-          let stationFeature = {}
+          let stationFeature = {};
           for (const line of resp) {
             const feature = {
               type: "Feature",
@@ -141,21 +141,21 @@ export default defineComponent({
               if (point.lb === "南锣鼓巷") {
                 // 站点测试
                 stationFeature = {
-                type: "Feature",
-                properties: {
+                  type: "Feature",
+                  properties: {
                     name: point.lb,
-                },
-                geometry: {
+                  },
+                  geometry: {
                     type: "Point",
                     coordinates: [lngLat.lng, lngLat.lat],
-                },
+                  },
                 };
               }
             }
             feature.geometry.coordinates.push(coordinates);
             features.push(feature);
           }
-            console.log(resp)
+
           const geoJson = {
             type: "FeatureCollection",
             features: features,
@@ -163,8 +163,8 @@ export default defineComponent({
           const faultStaionGeoJson = {
             type: "FeatureCollection",
             features: [stationFeature],
-          }
-          console.log(geoJson)
+          };
+          console.log(geoJson);
           const lineLayer = getLineLayer(geoJson);
           const faultLayer = getFaultStationLayer(faultStaionGeoJson);
           scene.addLayer(lineLayer);

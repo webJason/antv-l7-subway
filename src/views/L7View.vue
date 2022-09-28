@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref, toRefs } from "vue";
+import { defineComponent, onMounted, reactive, ref } from "vue";
 import { Scene, LineLayer, PointLayer, Popup } from "@antv/l7";
 import { Mapbox } from "@antv/l7-maps";
 import { Colors } from "./colors";
@@ -102,7 +102,7 @@ export default defineComponent({
       return res;
     };
     const stationInfo = ref(null);
-    let focusStation = {};
+    const focusStation = reactive({});
     const showInfo = ref(false);
     onMounted(() => {
       /* httpRequest({
@@ -228,9 +228,9 @@ export default defineComponent({
           );
           const faultStationLayer = getFaultStationLayer(faultStationGeo);
           // 绑定popup事件
-          faultStationLayer.on("mousemove", (e) => {
+          faultStationLayer.on("mouseenter", (e) => {
             // console.log(e.feature);
-            focusStation = e.feature;
+            Object.assign(focusStation, e.feature);
             const popup = new Popup({
               offsets: [0, 0],
               closeButton: false,
