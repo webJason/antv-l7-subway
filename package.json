@@ -1,6 +1,6 @@
 {
-  "name": " aa",
-  "version": "0.0.0",
+  "name": "antv-l7-subway",
+  "version": "0.0.2",
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build-only",
